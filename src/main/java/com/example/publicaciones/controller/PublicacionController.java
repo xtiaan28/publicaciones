@@ -87,7 +87,7 @@ public class PublicacionController {
     public ResponseEntity<Object> updatePublicacion(@PathVariable Long id, @RequestBody Publicacion publicacion) {
         Publicacion updatedPublicacion = publicacionService.updatePublicacion(id, publicacion);
         if(updatedPublicacion == null){
-            log.error("Error al crear actualizar {}",publicacion);
+            log.error("Error al actualizar {}",publicacion);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Error al actualizar la publicacion id "+id)); 
         }
         return ResponseEntity.ok(updatedPublicacion);
@@ -95,7 +95,7 @@ public class PublicacionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePublicacion(@PathVariable Long id){
         publicacionService.deletePublicacion(id);
-        return ResponseEntity.ok(id+ " Eliminado correctamente");
+        return ResponseEntity.ok("ID "+id+ " eliminado correctamente");
     }
     static class ErrorResponse {
         private final String message;
