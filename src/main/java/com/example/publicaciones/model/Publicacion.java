@@ -1,19 +1,28 @@
 package com.example.publicaciones.model;
 
+import org.springframework.hateoas.RepresentationModel;
 import java.util.Date;
 import java.util.List;
 
-import jakarta.persistence.*;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.*;
 
 @Entity
 @Table(name = "publicacion")
 
-public class Publicacion {
+public class Publicacion extends RepresentationModel<Publicacion>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_publicacion")
     private Long idPublicacion;
+
+    @NotBlank(message = "No puede ingresar un titulo vacio")
     @Column(name= "titulo")
     private String titulo;
     @Column(name = "tipo")

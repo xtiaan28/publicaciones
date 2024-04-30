@@ -7,8 +7,12 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +21,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.stream.Collectors;
+
 
 import com.example.publicaciones.model.Comentario;
 import com.example.publicaciones.model.Publicacion;
@@ -31,11 +38,38 @@ public class PublicacionController {
     private PublicacionService publicacionService;
 
     @GetMapping
+    public CollectionModel<EntityModel<Publicacion>> getAllPublicaciones() {
+        List<Publicacion> publicaciones = publicacionService.getAllPublicaciones();
+        log.info("GET /publicaciones");
+        log.info("Retornando todos las publicaciones");
+        List<EntityModel<Publicacion>> publicacionesResources = publicaciones.stream()
+            .map( publicacion -> EntityModel.of(publicacion,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getPublicacionById(publicacion.getIdPublicacion())).withSelfRel()
+            ))
+            .collect(Collectors.toList());
+
+        WebMvcLinkBuilder linkTo = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllPublicaciones());
+        CollectionModel<EntityModel<Publicacion>> resources = CollectionModel.of(publicacionesResources, linkTo.withRel("publicaciones"));
+
+        return resources;
+    }
+    /*@GetMapping
     public List<Publicacion> getAllPublicaciones() {
         return publicacionService.getAllPublicaciones();
-    }
-
+    }*/
     @GetMapping("/{id}")
+    public EntityModel<Publicacion> getPublicacionById(@PathVariable Long id) {
+        Optional<Publicacion> publicacion = publicacionService.getPublicacionById(id);
+
+        if (publicacion.isPresent()) {
+            return EntityModel.of(publicacion.get(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getPublicacionById(id)).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllPublicaciones()).withRel("all-publicaciones"));
+        } else {
+            throw new PublicacionNotFoundException("Publicacion not found with id: " + id);
+        }
+    }
+    /*@GetMapping("/{id}")
     public ResponseEntity <Object> getPublicacionById(@PathVariable Long id) {
         Optional<Publicacion> publicacion = publicacionService.getPublicacionById(id);
         if(publicacion.isEmpty()){
@@ -46,7 +80,8 @@ public class PublicacionController {
         }
         log.info("Publicacion encontrada con exito");
         return ResponseEntity.ok(publicacionService.getPublicacionById(id));
-    }
+    }*/
+    
     @GetMapping("promedios/{id}")
     public ResponseEntity <Object> getPromedioByPublicacion(@PathVariable Long id){
         List<Publicacion> publis = publicacionService.getAllPublicaciones();
@@ -73,7 +108,16 @@ public class PublicacionController {
         return ResponseEntity.ok(resultado);
 
     }
+
     @PostMapping
+    public EntityModel<Publicacion> createPublicacion(@Validated @RequestBody Publicacion publicacion) {
+        Publicacion createdPublicacion = publicacionService.createPublicacion(publicacion);
+            return EntityModel.of(createdPublicacion,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getPublicacionById(createdPublicacion.getIdPublicacion())).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllPublicaciones()).withRel("all-publicaciones"));
+
+    }
+    /*@PostMapping
     public ResponseEntity<Object> createPublicacion(@RequestBody Publicacion publicacion){
         Publicacion createdPublicacion = publicacionService.createPublicacion(publicacion);
         if(createdPublicacion == null){
@@ -82,8 +126,16 @@ public class PublicacionController {
         }
         return ResponseEntity.ok(createdPublicacion);
         //return peliculaService.createPelicula(pelicula);
-    }
+    }*/
     @PutMapping("/{id}")
+    public EntityModel<Publicacion> updateVenta(@PathVariable Long id, @RequestBody Publicacion publicacion) {
+        Publicacion updatedPublicacion = publicacionService.updatePublicacion(id, publicacion);
+        return EntityModel.of(updatedPublicacion,
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getPublicacionById(id)).withSelfRel(),
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getAllPublicaciones()).withRel("all-publicaciones"));
+
+    }
+    /*@PutMapping("/{id}")
     public ResponseEntity<Object> updatePublicacion(@PathVariable Long id, @RequestBody Publicacion publicacion) {
         Publicacion updatedPublicacion = publicacionService.updatePublicacion(id, publicacion);
         if(updatedPublicacion == null){
@@ -91,7 +143,7 @@ public class PublicacionController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Error al actualizar la publicacion id "+id)); 
         }
         return ResponseEntity.ok(updatedPublicacion);
-    }
+    }*/
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePublicacion(@PathVariable Long id){
         publicacionService.deletePublicacion(id);
